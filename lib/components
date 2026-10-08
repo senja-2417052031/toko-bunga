@@ -1,0 +1,51 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { supabaseBrowser } from "@/lib/supabase-browser";
+
+export default function Navbar() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = supabaseBrowser();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  async function keluar() {
+    await supabaseBrowser().auth.signOut();
+    window.location.href = "/";
+  }
+
+  return (
+    <nav className="flex items-center justify-between border-b px-8 py-3">
+      <Link href="/" className="text-lg font-bold text-pink-700">
+        🌸 Toko Bunga
+      </Link>
+      <div className="flex items-center gap-4 text-sm">
+        {user ? (
+          <>
+            <span className="text-gray-600">
+              {user.user_metadata?.nama ?? user.email}
+            </span>
+            <button onClick={keluar} className="rounded border px-3 py-1">
+              Keluar
+            </button>
+          </>
+        ) : (
+          <>
+            <Link href="/login">Masuk</Link>
+            <Link href="/register" className="rounded bg-pink-600 px-3 py-1 text-white">
+              Daftar
+            </Link>
+          </>
+        )}
+      </div>
+    </nav>
+  );
+}*
